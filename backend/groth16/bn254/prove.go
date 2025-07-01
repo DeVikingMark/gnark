@@ -98,12 +98,22 @@ func Prove(r1cs *cs.R1CS, pk *ProvingKey, fullWitness witness.Witness, opts ...b
 		return nil
 	}))
 
-	_solution, err := r1cs.Solve(fullWitness, solverOpts...)
-	if err != nil {
-		return nil, err
+	var solution *cs.R1CSSolution
+	if opt.ProvidedSolution != nil {
+		// Use provided solution instead of solving
+		var ok bool
+		solution, ok = opt.ProvidedSolution.(*cs.R1CSSolution)
+		if !ok {
+			return nil, fmt.Errorf("provided solution must be *cs.R1CSSolution, got %T", opt.ProvidedSolution)
+		}
+	} else {
+		// Solve the constraint system normally
+		_solution, err := r1cs.Solve(fullWitness, solverOpts...)
+		if err != nil {
+			return nil, err
+		}
+		solution = _solution.(*cs.R1CSSolution)
 	}
-
-	solution := _solution.(*cs.R1CSSolution)
 	wireValues := []fr.Element(solution.W)
 
 	start := time.Now()
