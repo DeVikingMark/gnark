@@ -305,11 +305,22 @@ func (s *instance) bsb22Hint(_ *big.Int, ins, outs []*big.Int) error {
 // solveConstraints computes the evaluation of the polynomials L, R, O
 // and sets x[id_L], x[id_R], x[id_O] in Lagrange form
 func (s *instance) solveConstraints() error {
-	_solution, err := s.spr.Solve(s.fullWitness, s.opt.SolverOpts...)
-	if err != nil {
-		return err
+	var solution *cs.SparseR1CSSolution
+	if s.opt.ProvidedSolution != nil {
+		// Use provided solution instead of solving
+		var ok bool
+		solution, ok = s.opt.ProvidedSolution.(*cs.SparseR1CSSolution)
+		if !ok {
+			return fmt.Errorf("provided solution must be *cs.SparseR1CSSolution, got %T", s.opt.ProvidedSolution)
+		}
+	} else {
+		// Solve the constraint system normally
+		_solution, err := s.spr.Solve(s.fullWitness, s.opt.SolverOpts...)
+		if err != nil {
+			return err
+		}
+		solution = _solution.(*cs.SparseR1CSSolution)
 	}
-	solution := _solution.(*cs.SparseR1CSSolution)
 	evaluationLDomainSmall := []fr.Element(solution.L)
 	evaluationRDomainSmall := []fr.Element(solution.R)
 	evaluationODomainSmall := []fr.Element(solution.O)
