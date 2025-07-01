@@ -62,6 +62,9 @@ type ProverConfig struct {
 	KZGFoldingHash hash.Hash
 	Accelerator    string
 	StatisticalZK  bool
+	// ProvidedSolution allows bypassing the solver and directly providing a pre-computed solution.
+	// This is useful for fuzzing and testing purposes.
+	ProvidedSolution any
 }
 
 // NewProverConfig returns a default ProverConfig with given prover options opts
@@ -141,6 +144,22 @@ func WithIcicleAcceleration() ProverOption {
 func WithStatisticalZeroKnowledge() ProverOption {
 	return func(pc *ProverConfig) error {
 		pc.StatisticalZK = true
+		return nil
+	}
+}
+
+// WithProvidedSolution allows providing a pre-computed solution directly,
+// bypassing the constraint system solver. This is useful for fuzzing and testing
+// purposes where you want to generate proofs from specific solutions.
+//
+// For Groth16: provide a *cs.R1CSSolution where cs matches your curve
+// For PLONK: provide a *cs.SparseR1CSSolution where cs matches your curve
+//
+// Note: The provided solution may result in an invalid proof if it doesn't
+// satisfy the constraint system.
+func WithProvidedSolution(solution any) ProverOption {
+	return func(opt *ProverConfig) error {
+		opt.ProvidedSolution = solution
 		return nil
 	}
 }
